@@ -7,6 +7,7 @@
 #include "fdt.h"
 #include "uart.h"
 #include "uart16550.h"
+#include "uart_litex.h"
 #include "finisher.h"
 #include "disabled_hart_mask.h"
 #include "htif.h"
@@ -146,12 +147,12 @@ static void hart_plic_init()
   if (!plic_ndevs)
     return;
 
-  size_t ie_words = (plic_ndevs + 8 * sizeof(uintptr_t) - 1) /
-		(8 * sizeof(uintptr_t));
+  size_t ie_words = (plic_ndevs + 8 * sizeof(*HLS()->plic_s_ie) - 1) /
+		(8 * sizeof(*HLS()->plic_s_ie));
   for (size_t i = 0; i < ie_words; i++) {
      if (HLS()->plic_s_ie) {
         // Supervisor not always present
-        HLS()->plic_s_ie[i] = ULONG_MAX;
+        HLS()->plic_s_ie[i] = __UINT32_MAX__;
      }
   }
   *HLS()->plic_m_thresh = 1;
@@ -173,6 +174,7 @@ void init_first_hart(uintptr_t hartid, uintptr_t dtb)
   // Confirm console as early as possible
   query_uart(dtb);
   query_uart16550(dtb);
+  query_uart_litex(dtb);
   query_htif(dtb);
   printm("bbl loader\r\n");
 
